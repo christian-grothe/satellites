@@ -34,10 +34,10 @@ fn copy_file(path: &Path) {
     // wait 200 ms for the file to be fully written
     std::thread::sleep(std::time::Duration::from_millis(1000));
 
-    // TBD
-    let _status = Command::new("cp")
+    let destination = "christian@satellites.local:/home/christian/satellites/recordings";
+    let _status = Command::new("scp")
         .arg(path)
-        .arg("../".to_string())
+        .arg(destination)
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .status()
