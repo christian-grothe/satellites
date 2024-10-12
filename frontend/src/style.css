@@ -1,0 +1,121 @@
+html,
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100dvh;
+}
+
+:root {
+  font-family: monospace;
+  line-height: 1.5;
+  font-weight: 400;
+
+  --white: #e6e6cc;
+  --background: #1a1a1e;
+  --backgroundLight: #211f1d;
+  background-color: var(--background);
+
+  color: var(--white);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(var(--background), var(--backgroundLight));
+  overflow: hidden;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--background);
+  cursor: pointer;
+  transition: border-color 0.25s;
+  color: var(--white);
+}
+
+button:focus,
+button:focus-visible {
+  outline: none;
+}
+
+.bold {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.stationWrapper {
+  width: 120px;
+  height: 120px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.satelliteWrapper {
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+}
+
+.stationWrapper img,
+.satelliteWrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.content {
+  position: absolute;
+}
+
+#startscreen,
+#appInfo {
+  border: 2px solid;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  background-color: var(--background);
+  z-index: 3;
+}
+
+#appInfo {
+  display: none;
+}
+
+#touchpad {
+  border: 1px solid white;
+  width: 200px;
+  height: 200px;
+  background-color: #1a1a1a;
+}
+
+#canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
