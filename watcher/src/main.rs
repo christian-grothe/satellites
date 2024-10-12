@@ -11,8 +11,10 @@ fn main() -> Result<()> {
         Err(e) => println!("watch error: {:?}", e),
     })?;
 
+    watcher.watch(Path::new("../recordings/"), RecursiveMode::Recursive)?;
+
     loop {
-        watcher.watch(Path::new("../recordings/"), RecursiveMode::Recursive)?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }
 
@@ -32,6 +34,7 @@ fn copy_file(path: &Path) {
     // wait 200 ms for the file to be fully written
     std::thread::sleep(std::time::Duration::from_millis(1000));
 
+    // TBD
     let _status = Command::new("cp")
         .arg(path)
         .arg("../".to_string())
