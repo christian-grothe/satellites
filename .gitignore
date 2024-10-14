@@ -40,3 +40,4 @@ Thumbs.db
 
 # Other
 /target/ # Rust build files
+recordings/*
