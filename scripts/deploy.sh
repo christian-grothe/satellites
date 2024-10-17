@@ -1,21 +1,55 @@
 #!/bin/bash
 
-cd server
+frontend=0
+backend=0
 
-echo "compiling for aarch64"
-cross build --target aarch64-unknown-linux-gnu --release
+user="christian"
+address="satellites.local"
+path="/home/christian/satellites"
 
-echo "copying binary to pi"
-scp target/aarch64-unknown-linux-gnu/release/server \
-christian@satellites.local:/home/christian/satellites/server_aarch64
+while getopts "fb" opt; do
+  case $opt in
+    f)
+      frontend=1
+      ;;
+    b)
+      backend=1
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      ;;
+  esac
+done
 
-echo "building frontend"
+if [ $frontend -eq 0 ] && [ $backend -eq 0 ]; then
+  frontend=1
+  backend=1
+fi
 
-cd ../frontend
 
-npm run build
+if [ $backend -eq 1 ]; then
+  echo "building backend"
 
-echo "copying frontend to pi"
-scp -r dist/ christian@satellites.local:/home/christian/satellites/
+  cd server
+  echo "compiling for aarch64"
+  cross build --target aarch64-unknown-linux-gnu --release
 
-ssh christian@satellites.local 'cd /home/christian/satellites/ && ./deploy.sh && sudo systemctl restart satellites.service'
+  echo "copying binary to pi \n\n"
+  scp target/aarch64-unknown-linux-gnu/release/server \
+  ${user}@${address}:${path}/server_aarch64
+
+  cd ..
+fi
+
+if [ $frontend -eq 1 ]; then
+  echo "building frontend"
+
+  cd frontend
+
+  npm run build
+
+  echo "copying frontend to pi"
+  scp -r dist/ ${user}@${address}:${path}/
+
+  ssh christian@satellites.local 'cd /home/christian/satellites/ && ./deploy.sh && sudo systemctl restart satellites.service'
+fi
