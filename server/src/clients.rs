@@ -9,11 +9,17 @@ use tokio_tungstenite::tungstenite::Message;
 pub type Tx = UnboundedSender<Message>;
 pub type ClientMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
+pub struct Client {
+    tx: Tx,
+    connected_client: Option<SocketAddr>,
+}
+
 #[derive(Default)]
 pub struct Clients {
     client_map: ClientMap,
     client_array: Vec<SocketAddr>,
     current_client_index: usize,
+    client_pairs: Vec<(SocketAddr, SocketAddr)>,
 }
 
 impl Clients {
@@ -26,28 +32,6 @@ impl Clients {
         self.client_map.lock().unwrap().remove(&addr);
         self.client_array.retain(|&x| x != addr);
         self.current_client_index = 0;
-    }
-
-    fn get_next_client(&mut self) -> Option<Tx> {
-        if self.client_array.is_empty() {
-            return None;
-        }
-        let client = self.client_array[self.current_client_index];
-        self.current_client_index = (self.current_client_index + 1) % self.client_array.len();
-        let binding = self.client_map.lock().unwrap();
-        let tx = binding.get(&client);
-        tx.cloned()
-    }
-
-    fn get_random_client(&mut self) -> Option<Tx> {
-        if self.client_array.is_empty() {
-            return None;
-        }
-        let i: usize = rand::random::<usize>() % self.client_array.len();
-        let client = self.client_array[i];
-        let binding = self.client_map.lock().unwrap();
-        let tx = binding.get(&client);
-        tx.cloned()
     }
 
     pub fn send_to_next_client(&mut self, msg: Message) {
@@ -74,4 +58,28 @@ impl Clients {
             }
         }
     }
+
+    fn get_next_client(&mut self) -> Option<Tx> {
+        if self.client_array.is_empty() {
+            return None;
+        }
+        let client = self.client_array[self.current_client_index];
+        self.current_client_index = (self.current_client_index + 1) % self.client_array.len();
+        let binding = self.client_map.lock().unwrap();
+        let tx = binding.get(&client);
+        tx.cloned()
+    }
+
+    fn get_random_client(&mut self) -> Option<Tx> {
+        if self.client_array.is_empty() {
+            return None;
+        }
+        let i: usize = rand::random::<usize>() % self.client_array.len();
+        let client = self.client_array[i];
+        let binding = self.client_map.lock().unwrap();
+        let tx = binding.get(&client);
+        tx.cloned()
+    }
+
+    fn connect_clients(&mut self) {}
 }
