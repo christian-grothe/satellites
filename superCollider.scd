@@ -3,7 +3,7 @@ s.boot;
 
 t = TempoClock.new(120/60);
 
-n = NetAddr.new("127.0.0.1", 8081);
+n = NetAddr.new("satellites.local", 8081);
 w = {
     | path , b, n |
     var date, postfix, fullPath, headerFormat, msg;

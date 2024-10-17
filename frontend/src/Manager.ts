@@ -45,7 +45,7 @@ export class Manager {
 
     this.stars.setAnalyser(this.analyserNode);
 
-    const ws = new WebSocket("ws://127.0.0.1:8080");
+    const ws = new WebSocket("ws://satellites.local:8080");
 
     ws.onopen = () => {
       this._requestSync();

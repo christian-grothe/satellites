@@ -7,7 +7,7 @@ cross build --target aarch64-unknown-linux-gnu --release
 
 echo "copying binary to pi"
 scp target/aarch64-unknown-linux-gnu/release/server \
-christian@satellites.local:/home/christian/satellites/server_arm64
+christian@satellites.local:/home/christian/satellites/server_aarch64
 
 echo "building frontend"
 
