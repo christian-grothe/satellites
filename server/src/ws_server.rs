@@ -78,19 +78,22 @@ fn handle_client_message(msg: String, tx: Tx) {
     let incoming_message: IncomingMessage = serde_json::from_str(&msg).unwrap();
 
     if incoming_message.message_type == "sync" {
-        if let Some(timestamp) = incoming_message.data.as_i64() {
+        if let Some(client_timestamp) = incoming_message.data.as_str() {
             let current_timestamp = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_millis();
 
+            println!("Received sync message with timestamp: {}", client_timestamp);
+            println!("current time is: {}", current_timestamp);
+
             let osc_message: OscMessage = OscMessage {
                 addr: "/sync".to_string(),
                 args: vec![
                     OscType::String("t1".to_string()),
-                    OscType::Long(timestamp),
+                    OscType::String(client_timestamp.to_string()),
                     OscType::String("t2".to_string()),
-                    OscType::Long(current_timestamp as i64),
+                    OscType::String(current_timestamp.to_string()),
                 ],
             };
             let osc_packet: OscPacket = OscPacket::Message(osc_message);
@@ -105,3 +108,6 @@ fn handle_client_message(msg: String, tx: Tx) {
         }
     }
 }
+
+// 1729454117578
+// 1729454117581

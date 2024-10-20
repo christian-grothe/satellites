@@ -36,17 +36,22 @@ impl Clients {
 
     pub fn send_to_next_client(&mut self, msg: Message) {
         if let Some(client) = self.get_next_client() {
-            if let Err(e) = client.unbounded_send(msg) {
-                println!("Error sending message to client: {:?}", e);
-            }
+            Clients::handle_message_error(client.unbounded_send(msg));
         }
     }
 
     pub fn send_to_random_client(&mut self, msg: Message) {
         if let Some(client) = self.get_random_client() {
-            if let Err(e) = client.unbounded_send(msg) {
-                println!("Error sending message to client: {:?}", e);
-            }
+            Clients::handle_message_error(client.unbounded_send(msg));
+        }
+    }
+
+    fn handle_message_error<T>(result: Result<(), T>)
+    where
+        T: std::fmt::Debug,
+    {
+        if let Err(e) = result {
+            println!("Error sending message to client: {:?}", e);
         }
     }
 

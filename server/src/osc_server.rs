@@ -70,7 +70,7 @@ impl OscServer {
 
         msg.args
             .push(rosc::OscType::String("timestamp".to_string()));
-        msg.args.push(rosc::OscType::Long(timestamp as i64));
+        msg.args.push(rosc::OscType::String(timestamp.to_string()));
 
         OscPacket::Message(msg.clone())
     }

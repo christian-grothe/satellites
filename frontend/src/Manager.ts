@@ -49,9 +49,9 @@ export class Manager {
 
     ws.onopen = () => {
       this._requestSync();
-      setInterval(() => {
-        this._requestSync();
-      }, 100000);
+      // setInterval(() => {
+      //   this._requestSync();
+      // }, 100000);
     };
 
     ws.onmessage = this._handleMessages.bind(this);
@@ -63,8 +63,6 @@ export class Manager {
     const arrayBuf = await event.data.arrayBuffer();
 
     const { address, args } = parseOSCMessage(arrayBuf);
-
-    console.log(address, args);
 
     switch (address) {
       case "/sampler/play":
@@ -85,8 +83,6 @@ export class Manager {
         const t3 = Date.now();
         const t1 = args[1] as number;
         const t2 = args[3] as number;
-        console.log(t1, t2, t3);
-
         this._handleOffset(t1, t2, t3);
         break;
       default:
@@ -133,12 +129,9 @@ export class Manager {
   }
 
   _requestSync() {
-    for (let i = 0; i < 10; i++) {
-      setTimeout(() => {
-        if (!this.ws) return;
-        const msg = { message_type: "sync", data: Date.now() };
-        this.ws.send(JSON.stringify(msg));
-      }, i * 500);
-    }
+    if (!this.ws) return;
+    const now = Date.now();
+    const msg = { message_type: "sync", data: `${now}` };
+    this.ws.send(JSON.stringify(msg));
   }
 }

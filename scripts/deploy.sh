@@ -35,10 +35,13 @@ if [ $backend -eq 1 ]; then
   cross build --target aarch64-unknown-linux-gnu --release
 
   echo "copying binary to pi \n\n"
-  scp target/aarch64-unknown-linux-gnu/release/server \
-  ${user}@${address}:${path}/server_aarch64
 
-  cd ..
+  cd target/aarch64-unknown-linux-gnu/release
+  mv server server_aarch64
+  scp server_aarch64 \
+  ${user}@${address}:${path}/
+
+  cd ../../../../
 fi
 
 if [ $frontend -eq 1 ]; then
@@ -51,5 +54,6 @@ if [ $frontend -eq 1 ]; then
   echo "copying frontend to pi"
   scp -r dist/ ${user}@${address}:${path}/
 
-  ssh christian@satellites.local 'cd /home/christian/satellites/ && ./deploy.sh && sudo systemctl restart satellites.service'
+  ssh christian@satellites.local 'cd /home/christian/satellites/ && ./deploy.sh'
+  #sudo systemctl restart satellites.service'
 fi

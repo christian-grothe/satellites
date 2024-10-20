@@ -30,6 +30,7 @@ class Sampler {
   }
 
   set recordingList(filenames: string[]) {
+    console.log(filenames);
     this._recordingList = filenames;
     setTimeout(() => {
       this.getRecordings();
@@ -70,7 +71,6 @@ class Sampler {
   play(buffers: AudioBuffer[], delay: number, args: PlayMessage) {
     if (!this.ctx || !this.mstrVol) return;
     const currentTime = this.ctx.currentTime + delay / 1000;
-    console.log(currentTime);
 
     const { att, rel, hold, gain, pitch, start, length, bufIndex } = args;
 
