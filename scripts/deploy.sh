@@ -30,6 +30,8 @@ fi
 if [ $backend -eq 1 ]; then
   echo "building backend"
 
+  ssh ${user}@${address} 'sudo systemctl stop satellites.service'
+
   cd server
   echo "compiling for aarch64"
   cross build --target aarch64-unknown-linux-gnu --release
@@ -40,6 +42,8 @@ if [ $backend -eq 1 ]; then
   mv server server_aarch64
   scp server_aarch64 \
   ${user}@${address}:${path}/
+
+  ssh ${user}@${address} 'sudo systemctl restart satellites.service'
 
   cd ../../../../
 fi
@@ -55,5 +59,4 @@ if [ $frontend -eq 1 ]; then
   scp -r dist/ ${user}@${address}:${path}/
 
   ssh christian@satellites.local 'cd /home/christian/satellites/ && ./deploy.sh'
-  #sudo systemctl restart satellites.service'
 fi

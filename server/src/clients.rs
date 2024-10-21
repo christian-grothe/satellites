@@ -9,17 +9,11 @@ use tokio_tungstenite::tungstenite::Message;
 pub type Tx = UnboundedSender<Message>;
 pub type ClientMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 
-pub struct Client {
-    tx: Tx,
-    connected_client: Option<SocketAddr>,
-}
-
 #[derive(Default)]
 pub struct Clients {
     client_map: ClientMap,
     client_array: Vec<SocketAddr>,
     current_client_index: usize,
-    client_pairs: Vec<(SocketAddr, SocketAddr)>,
 }
 
 impl Clients {
@@ -37,6 +31,13 @@ impl Clients {
     pub fn send_to_next_client(&mut self, msg: Message) {
         if let Some(client) = self.get_next_client() {
             Clients::handle_message_error(client.unbounded_send(msg));
+        }
+    }
+
+    pub fn send_to_client(&mut self, addr: SocketAddr, msg: Message) {
+        let binding = self.client_map.lock().unwrap();
+        if let Some(tx) = binding.get(&addr) {
+            Clients::handle_message_error(tx.unbounded_send(msg));
         }
     }
 
@@ -85,6 +86,4 @@ impl Clients {
         let tx = binding.get(&client);
         tx.cloned()
     }
-
-    fn connect_clients(&mut self) {}
 }

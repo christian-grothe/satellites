@@ -63,6 +63,7 @@ export class Manager {
     const arrayBuf = await event.data.arrayBuffer();
 
     const { address, args } = parseOSCMessage(arrayBuf);
+    console.log(event.data);
 
     switch (address) {
       case "/sampler/play":
@@ -105,7 +106,7 @@ export class Manager {
       for (const filename of this._recordingList) {
         if (filename === "test.wav") continue;
         const response = await fetch(
-          `http://satellites.local:8080/recordings/${filename}`,
+          `http://satellites.local/recordings/${filename}`,
         );
         const arrayBuffer = await response.arrayBuffer();
         const newBuffer = await this.ctx.decodeAudioData(arrayBuffer);

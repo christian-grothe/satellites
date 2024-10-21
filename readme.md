@@ -26,4 +26,9 @@ A very simple frontend that is beeing serverd by the raspbery pi via nginx. The 
 - [ ] handle ping / pong events
 - [ ] work on the clients synths and sampler
 - [ ] let clients interact with eachother
+- [x] send initial recording list 
+- [ ] send new recording
+
+
+
 

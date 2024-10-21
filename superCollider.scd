@@ -32,7 +32,7 @@ n.sendMsg("/test",123,"Hello");
   x = Synth(\rec, [\bufnum, b]);
   x.onFree({
     b.normalize;
-    w.value("/home/christian/dev/satellites-local/recordings/", b, n);
+    w.value("/home/christian/dev/satellites/recordings/", b, n);
     })
 )
 
@@ -76,15 +76,15 @@ a.free
     {
       n.sendMsg("/sampler/play/next",
       \pitch, ~seq.next,
-      \att, 2,
-      \rel, [5].choose,
-      \hold,[1].choose,
+      \att, 0,
+      \rel, [1].choose,
+      \hold,[0].choose,
       \gain, 0.25,
-      \start, [0.0,0.2,0.3,0.4,0.5].choose,
-      \length, [0.1].choose,
-      \bufIndex, (1..20).choose,
+      \start, [0.0].choose,
+      \length, [0.5].choose,
+      \bufIndex, [4].choose,
     );
-      wait([5].choose);
+      wait([0.5].choose);
     }.loop;
   }).play(t)
 )
