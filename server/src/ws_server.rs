@@ -2,7 +2,6 @@ use futures::{channel::mpsc::unbounded, StreamExt};
 use rosc::{OscMessage, OscPacket, OscType};
 use serde_json::Value;
 use std::{
-    fs,
     net::SocketAddr,
     sync::{Arc, Mutex},
     time::{SystemTime, UNIX_EPOCH},
@@ -10,7 +9,7 @@ use std::{
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::Message;
 
-use crate::clients::{Clients, Tx};
+use crate::clients::{Clients, SendTo, Tx};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct IncomingMessage {
@@ -37,21 +36,7 @@ pub async fn handle_websocket_connection(
     {
         let mut clients = clients.lock().unwrap();
         clients.add_client(addr, tx.clone());
-
-        let dir = fs::read_dir("./recordings").unwrap();
-        let files: Vec<OscType> = dir
-            .map(|dir| OscType::String(dir.unwrap().file_name().to_str().unwrap().to_string()))
-            .collect();
-
-        let osc_msg = OscMessage {
-            addr: "/recordings".to_string(),
-            args: files,
-        };
-
-        let osc_packet = OscPacket::Message(osc_msg);
-        let raw = rosc::encoder::encode(&osc_packet).unwrap();
-
-        clients.send_to_client(addr, Message::Binary(raw));
+        clients.send_recording_list(SendTo::Single(addr));
     }
 
     let forward_task = async move {

@@ -90,6 +90,8 @@ class Sampler {
     gainNode.gain.linearRampToValueAtTime(1, currentTime + att + hold);
     gainNode.gain.linearRampToValueAtTime(0, currentTime + totalLength);
 
+    if (!buffers[bufIndex % buffers.length]) return;
+
     source.buffer = buffers[bufIndex % buffers.length];
 
     this.sampleLength = source.buffer.duration;

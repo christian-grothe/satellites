@@ -7,6 +7,7 @@ n = NetAddr.new("satellites.local", 8081);
 w = {
     | path , b, n |
     var date, postfix, fullPath, headerFormat, msg;
+  date = Date.
     date = Date.getDate.format("%d%m%H%M%S").asString;
     headerFormat = "wav";
     postfix = "." ++ headerFormat;
@@ -14,6 +15,7 @@ w = {
     fullPath.postln;
     b.write( fullPath, headerFormat: headerFormat );
 };
+
  
 b = Buffer.alloc(s, 44100 * 5, 1);
 
@@ -25,7 +27,6 @@ SynthDef(\rec,{
   }).add;
 )
 
-
 n.sendMsg("/test",123,"Hello");
 
 (
@@ -36,6 +37,7 @@ n.sendMsg("/test",123,"Hello");
     })
 )
 
+(
 ~minor = Scale.minor;
 
 ~seq = Pseq(~minor,inf).asStream;
@@ -45,6 +47,7 @@ n.sendMsg("/test",123,"Hello");
 ~whiteB = Pwhite(0.01,0.1).asStream;
 ~rand = Pseq([0.25,0.5,1,2],inf).asStream;
 ~oct = Prand([0.5,1,2],inf).asStream;
+)
 
 
 
@@ -55,14 +58,14 @@ n.sendMsg("/test",123,"Hello");
       n.sendMsg("/sampler/play/next",
       \pitch, ~seq.next.midiratio * ~oct.next,
       \att, 0,
-      \rel, 0.025,
+      \rel, 0.1,
       \hold,0,
       \gain, 1,
       \start, ~white.next,
       \length, ~whiteB.next,
       \bufIndex, (1..20).choose,
     );
-      wait(0.025);
+     wait(0.025);
     }.loop;
   }).play(t);
 )
@@ -99,11 +102,11 @@ c.free;
         \pitch, [1].choose,
         \att, 0,
         \rel, [0.3].choose,
-        \hold,[0].choose,
+        \hold,[0.2].choose,
         \amp, 0.5,
         \start, [0.0].choose,
-        \length, [1.0].choose,
-        \bufIndex, 4,
+        \length, [0.02].choose,
+        \bufIndex, 2,
   );
 )
 

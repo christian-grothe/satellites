@@ -1,6 +1,8 @@
 use futures::channel::mpsc::UnboundedSender;
+use rosc::{OscMessage, OscPacket, OscType};
 use std::{
     collections::HashMap,
+    fs,
     net::SocketAddr,
     sync::{Arc, Mutex},
 };
@@ -16,6 +18,11 @@ pub struct Clients {
     current_client_index: usize,
 }
 
+pub enum SendTo {
+    Single(SocketAddr),
+    Broadcast,
+}
+
 impl Clients {
     pub fn add_client(&mut self, addr: SocketAddr, tx: Tx) {
         self.client_map.lock().unwrap().insert(addr, tx.clone());
@@ -23,9 +30,10 @@ impl Clients {
     }
 
     pub fn remove_client(&mut self, addr: SocketAddr) {
-        self.client_map.lock().unwrap().remove(&addr);
-        self.client_array.retain(|&x| x != addr);
-        self.current_client_index = 0;
+        if self.client_map.lock().unwrap().remove(&addr).is_some() {
+            self.client_array.retain(|&x| x != addr);
+            self.current_client_index = 0;
+        }
     }
 
     pub fn send_to_next_client(&mut self, msg: Message) {
@@ -34,25 +42,46 @@ impl Clients {
         }
     }
 
-    pub fn send_to_client(&mut self, addr: SocketAddr, msg: Message) {
+    pub fn send_to_client(&self, addr: SocketAddr, msg: Message) {
         let binding = self.client_map.lock().unwrap();
         if let Some(tx) = binding.get(&addr) {
             Clients::handle_message_error(tx.unbounded_send(msg));
         }
     }
 
-    pub fn send_to_random_client(&mut self, msg: Message) {
+    pub fn send_to_random_client(&self, msg: Message) {
         if let Some(client) = self.get_random_client() {
             Clients::handle_message_error(client.unbounded_send(msg));
         }
     }
 
-    fn handle_message_error<T>(result: Result<(), T>)
-    where
-        T: std::fmt::Debug,
-    {
-        if let Err(e) = result {
-            println!("Error sending message to client: {:?}", e);
+    pub fn send_recording_list(&self, send_to: SendTo) {
+        let files: Vec<OscType> = fs::read_dir("./recordings")
+            .unwrap()
+            .filter_map(|entry| {
+                entry.ok().and_then(|e| {
+                    e.file_name()
+                        .to_str()
+                        .map(|s| OscType::String(s.to_string()))
+                })
+            })
+            .collect();
+
+        let osc_msg = OscMessage {
+            addr: "/recordings".to_string(),
+            args: files,
+        };
+
+        let osc_packet = OscPacket::Message(osc_msg);
+        let raw = rosc::encoder::encode(&osc_packet).unwrap();
+
+        match send_to {
+            SendTo::Single(addr) => {
+                self.send_to_client(addr, Message::Binary(raw));
+            }
+            SendTo::Broadcast => {
+                self.broadcast(Message::Binary(raw));
+            }
         }
     }
 
@@ -76,7 +105,7 @@ impl Clients {
         tx.cloned()
     }
 
-    fn get_random_client(&mut self) -> Option<Tx> {
+    fn get_random_client(&self) -> Option<Tx> {
         if self.client_array.is_empty() {
             return None;
         }
@@ -85,5 +114,14 @@ impl Clients {
         let binding = self.client_map.lock().unwrap();
         let tx = binding.get(&client);
         tx.cloned()
+    }
+
+    fn handle_message_error<T>(result: Result<(), T>)
+    where
+        T: std::fmt::Debug,
+    {
+        if let Err(e) = result {
+            println!("Error sending message to client: {:?}", e);
+        }
     }
 }

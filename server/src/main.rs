@@ -9,7 +9,6 @@ use std::error::Error;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tokio::net::{TcpListener, UdpSocket};
-use tokio_tungstenite::tungstenite::Message;
 use ws_server::handle_websocket_connection;
 
 #[tokio::main]
@@ -68,8 +67,7 @@ fn handle_watch_event(event: Event, clients: Arc<Mutex<Clients>>) {
     match event.kind {
         notify::EventKind::Create(_) => {
             let clients = clients.lock().unwrap();
-            let msg = Message::Text("Hello".to_string());
-            clients.broadcast(msg);
+            clients.send_recording_list(clients::SendTo::Broadcast);
         }
         _ => {}
     }

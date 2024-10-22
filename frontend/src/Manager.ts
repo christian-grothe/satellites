@@ -63,7 +63,6 @@ export class Manager {
     const arrayBuf = await event.data.arrayBuffer();
 
     const { address, args } = parseOSCMessage(arrayBuf);
-    console.log(event.data);
 
     switch (address) {
       case "/sampler/play":
@@ -75,6 +74,7 @@ export class Manager {
         this.synth.play();
         break;
       case "/recordings":
+        console.log(args);
         this.recordingList = args as string[];
         break;
       case "/test":
