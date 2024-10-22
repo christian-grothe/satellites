@@ -15,6 +15,7 @@ pub type ClientMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
 pub struct Clients {
     client_map: ClientMap,
     client_array: Vec<SocketAddr>,
+    pub last_pong: HashMap<SocketAddr, std::time::Instant>,
     current_client_index: usize,
 }
 
@@ -27,12 +28,14 @@ impl Clients {
     pub fn add_client(&mut self, addr: SocketAddr, tx: Tx) {
         self.client_map.lock().unwrap().insert(addr, tx.clone());
         self.client_array.push(addr);
+        self.last_pong.insert(addr, std::time::Instant::now());
     }
 
     pub fn remove_client(&mut self, addr: SocketAddr) {
         if self.client_map.lock().unwrap().remove(&addr).is_some() {
             self.client_array.retain(|&x| x != addr);
             self.current_client_index = 0;
+            self.last_pong.remove(&addr);
         }
     }
 

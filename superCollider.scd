@@ -7,7 +7,6 @@ n = NetAddr.new("satellites.local", 8081);
 w = {
     | path , b, n |
     var date, postfix, fullPath, headerFormat, msg;
-  date = Date.
     date = Date.getDate.format("%d%m%H%M%S").asString;
     headerFormat = "wav";
     postfix = "." ++ headerFormat;
@@ -27,7 +26,7 @@ SynthDef(\rec,{
   }).add;
 )
 
-n.sendMsg("/test",123,"Hello");
+n.sendMsg("/test", "Hello");
 
 (
   x = Synth(\rec, [\bufnum, b]);

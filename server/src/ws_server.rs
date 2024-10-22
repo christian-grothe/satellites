@@ -4,12 +4,15 @@ use serde_json::Value;
 use std::{
     net::SocketAddr,
     sync::{Arc, Mutex},
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::Message;
 
 use crate::clients::{Clients, SendTo, Tx};
+
+const PING_INTERVAL: Duration = Duration::from_secs(10);
+const PONG_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct IncomingMessage {
@@ -45,12 +48,15 @@ pub async fn handle_websocket_connection(
         });
     };
 
+    let clients_clone = clients.clone();
     let receive_task = async move {
         incoming
             .for_each(|message| async {
+                let mut clients = clients_clone.lock().unwrap();
                 match message {
                     Ok(msg) => match msg {
                         Message::Text(msg) => handle_client_message(msg, tx.clone()),
+                        Message::Pong(..) => handle_pong_message(&mut clients, addr),
                         _ => println!("received unsupported message type"),
                     },
                     Err(e) => {
@@ -61,12 +67,39 @@ pub async fn handle_websocket_connection(
             .await;
     };
 
+    let clients_clone = clients.clone();
+    let ping_task = async move {
+        let mut interval = tokio::time::interval(PING_INTERVAL);
+        loop {
+            interval.tick().await;
+            let mut clients = clients_clone.lock().unwrap();
+
+            let now = std::time::Instant::now();
+
+            let inactive_clients: Vec<SocketAddr> = clients
+                .last_pong
+                .iter()
+                .filter(|(_, &last_pong)| now.duration_since(last_pong) > PONG_TIMEOUT)
+                .map(|(&addr, _)| addr)
+                .collect();
+
+            for addr in inactive_clients {
+                clients.remove_client(addr);
+            }
+
+            clients.send_to_client(addr, Message::Ping(vec![]));
+        }
+    };
+
     tokio::select! {
         _ = forward_task => {
             println!("Forwarding task completed for client {}", addr);
         },
         _ = receive_task => {
             println!("Receiving task completed for client {}", addr);
+        },
+        _ = ping_task => {
+            println!("Ping task completed for client {}", addr);
         }
     }
 
@@ -110,5 +143,8 @@ fn handle_client_message(msg: String, tx: Tx) {
     }
 }
 
-// 1729454117578
-// 1729454117581
+fn handle_pong_message(clients: &mut Clients, addr: SocketAddr) {
+    if let Some(instant) = clients.last_pong.get_mut(&addr) {
+        *instant = std::time::Instant::now();
+    }
+}

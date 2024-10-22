@@ -23,7 +23,7 @@ A very simple frontend that is beeing serverd by the raspbery pi via nginx. The 
 
 
 ### todos
-- [ ] handle ping / pong events
+- [x] handle ping / pong events
 - [ ] work on the clients synths and sampler
 - [ ] let clients interact with eachother
 - [x] send initial recording list 

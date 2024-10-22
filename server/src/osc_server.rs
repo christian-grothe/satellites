@@ -60,7 +60,10 @@ impl OscServer {
                 let raw = rosc::encoder::encode(packet).unwrap();
                 self.clients.lock().unwrap().broadcast(Message::Binary(raw));
             }
-            _ => println!("unknown message"),
+            _ => {
+                let raw = rosc::encoder::encode(packet).unwrap();
+                self.clients.lock().unwrap().broadcast(Message::Binary(raw));
+            }
         }
     }
 
