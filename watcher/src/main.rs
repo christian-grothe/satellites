@@ -31,10 +31,9 @@ fn handle_event(event: Event) {
 }
 
 fn copy_file(path: &Path) {
-    // wait 200 ms for the file to be fully written
-    std::thread::sleep(std::time::Duration::from_millis(1000));
+    std::thread::sleep(std::time::Duration::from_millis(500));
 
-    let destination = "christian@satellites.local:/home/christian/satellites/recordings";
+    let destination = "satellites@49.12.0.236:/home/satellites/recordings";
     let _status = Command::new("scp")
         .arg(path)
         .arg(destination)

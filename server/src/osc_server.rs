@@ -24,7 +24,7 @@ impl OscServer {
             if let Some((size, _)) = self.msg {
                 let (_, packet) = rosc::decoder::decode_udp(&self.buf[..size]).unwrap();
 
-                match packet.clone() {
+                match packet {
                     rosc::OscPacket::Message(mut msg) => {
                         let packet_with_timestamp = self.add_timestamp(&mut msg);
                         self.handle_message(&msg, &packet_with_timestamp);

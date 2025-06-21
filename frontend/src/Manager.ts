@@ -17,6 +17,9 @@ export class Manager {
   offsetAvergae: number;
   _recordingList: string[];
   audioBuffers: AudioBuffer[];
+  apiUrl: string;
+  webSocketProtocol: string;
+  httpProtocol: string;
 
   constructor() {
     this.sampler = new Sampler();
@@ -27,6 +30,9 @@ export class Manager {
     this._recordingList = [];
     this.audioBuffers = [];
     this.stars = new Stars(100);
+    this.apiUrl = import.meta.env.DEV ? "localhost:8080" : "satellites.kryshe.com";
+    this.webSocketProtocol = import.meta.env.DEV ? "ws" : "wss";
+    this.httpProtocol = import.meta.env.DEV ? "http" : "https";
   }
 
   init(ctx: AudioContext) {
@@ -45,7 +51,7 @@ export class Manager {
 
     this.stars.setAnalyser(this.analyserNode);
 
-    const ws = new WebSocket("ws://satellites.local:8080");
+    const ws = new WebSocket(`${this.webSocketProtocol}://${this.apiUrl}/ws`);
 
     ws.onopen = () => {
       this._requestSync();
@@ -106,7 +112,7 @@ export class Manager {
       for (const filename of this._recordingList) {
         if (filename === "test.wav") continue;
         const response = await fetch(
-          `http://satellites.local/recordings/${filename}`,
+          `http://localhost:8083/${filename}`,
         );
         const arrayBuffer = await response.arrayBuffer();
         const newBuffer = await this.ctx.decodeAudioData(arrayBuffer);

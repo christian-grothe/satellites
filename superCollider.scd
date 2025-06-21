@@ -3,7 +3,9 @@ s.boot;
 
 t = TempoClock.new(120/60);
 
-n = NetAddr.new("satellites.local", 8081);
+n = NetAddr.new("49.12.0.236", 8081);
+//n = NetAddr.new("127.0.0.1", 8081);
+
 w = {
     | path , b, n |
     var date, postfix, fullPath, headerFormat, msg;
@@ -26,7 +28,7 @@ SynthDef(\rec,{
   }).add;
 )
 
-n.sendMsg("/test", "Hello");
+n.sendMsg("/test", "Hello", 0);
 
 (
   x = Synth(\rec, [\bufnum, b]);
@@ -43,7 +45,7 @@ n.sendMsg("/test", "Hello");
 ~seq.next.midiratio;
 
 ~white = Pwhite(0.0,1.0).asStream;
-~whiteB = Pwhite(0.01,0.1).asStream;
+~whiteB = Pwhite(0.5,0.1).asStream;
 ~rand = Pseq([0.25,0.5,1,2],inf).asStream;
 ~oct = Prand([0.5,1,2],inf).asStream;
 )
@@ -56,15 +58,15 @@ n.sendMsg("/test", "Hello");
     {
       n.sendMsg("/sampler/play/next",
       \pitch, ~seq.next.midiratio * ~oct.next,
-      \att, 0,
-      \rel, 0.1,
+      \att, 2,
+      \rel, 2,
       \hold,0,
       \gain, 1,
       \start, ~white.next,
       \length, ~whiteB.next,
-      \bufIndex, (1..20).choose,
+      \bufIndex, (0..1).choose,
     );
-     wait(0.025);
+     wait(1);
     }.loop;
   }).play(t);
 )
