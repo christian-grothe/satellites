@@ -1,11 +1,10 @@
-(
 s.boot;
+t = TempoClock.new(119/60);
 
-t = TempoClock.new(120/60);
+//n = NetAddr.new("49.12.0.236", 8081);
+n = NetAddr.new("192.168.1.228", 8081);
 
-n = NetAddr.new("49.12.0.236", 8081);
-//n = NetAddr.new("127.0.0.1", 8081);
-
+(
 w = {
     | path , b, n |
     var date, postfix, fullPath, headerFormat, msg;
@@ -16,16 +15,19 @@ w = {
     fullPath.postln;
     b.write( fullPath, headerFormat: headerFormat );
 };
+)
 
  
 b = Buffer.alloc(s, 44100 * 5, 1);
 
+(
 SynthDef(\rec,{
     | bufnum |
     var sig;
     sig = SoundIn.ar(1);
     RecordBuf.ar(sig,bufnum,loop:0, doneAction:2);
   }).add;
+
 )
 
 n.sendMsg("/test", "Hello", 0);
@@ -44,10 +46,10 @@ n.sendMsg("/test", "Hello", 0);
 ~seq = Pseq(~minor,inf).asStream;
 ~seq.next.midiratio;
 
-~white = Pwhite(0.0,1.0).asStream;
-~whiteB = Pwhite(0.5,0.1).asStream;
+~white = Pwhite(0.2,0.2).asStream;
+~whiteB = Pwhite(0.2,0.01).asStream;
 ~rand = Pseq([0.25,0.5,1,2],inf).asStream;
-~oct = Prand([0.5,1,2],inf).asStream;
+~oct = Prand([1,2],inf).asStream;
 )
 
 
@@ -58,15 +60,15 @@ n.sendMsg("/test", "Hello", 0);
     {
       n.sendMsg("/sampler/play/next",
       \pitch, ~seq.next.midiratio * ~oct.next,
-      \att, 2,
-      \rel, 2,
-      \hold,0,
+      \att, 0,
+      \rel, 0.125,
+      \hold, 0,
       \gain, 1,
       \start, ~white.next,
       \length, ~whiteB.next,
-      \bufIndex, (0..1).choose,
+      \bufIndex, 6,
     );
-     wait(1);
+     wait(0.125);
     }.loop;
   }).play(t);
 )

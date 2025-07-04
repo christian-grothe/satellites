@@ -33,7 +33,7 @@ fn handle_event(event: Event) {
 fn copy_file(path: &Path) {
     std::thread::sleep(std::time::Duration::from_millis(500));
 
-    let destination = "satellites@49.12.0.236:/home/satellites/recordings";
+    let destination = "christian@192.168.1.228:/home/christian/satellites/recordings";
     let _status = Command::new("scp")
         .arg(path)
         .arg(destination)
