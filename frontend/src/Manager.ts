@@ -77,7 +77,7 @@ export class Manager {
       case "/sampler/play/rand":
       case "/sampler/play/next":
         //this.sampler.setAndPlay(args, this.offsetAvergae, this.audioBuffers);
-        this.granularSynth.setAndPlay(this.audioBuffers);
+        this.granularSynth.setAndPlay(this.audioBuffers, args);
         break;
       case "/synth/play":
         this.synth.play();

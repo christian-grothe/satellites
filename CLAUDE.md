@@ -32,9 +32,17 @@ The repo is four loosely-coupled programs plus deployment glue:
 4. Each client fetches the new `.wav`s over HTTP (from the static nginx, see below) and
    `decodeAudioData`s them into `audioBuffers`.
 5. During performance, SuperCollider sends `/sampler/play`, `/sampler/play/next`, or
-   `/sampler/play/rand` over UDP. The server appends a `timestamp` arg (now + 1000ms) and
-   routes: `play` → broadcast, `play/next` → round-robin one client, `play/rand` → random
-   client. Clients schedule playback at that timestamp, corrected by their clock offset.
+   `/sampler/play/rand` over UDP. The server appends a `timestamp` arg (server-side UNIX
+   millis at receive time, via `OscServer::add_timestamp`) and routes: `play` → broadcast,
+   `play/next` → round-robin one client, `play/rand` → random client. Clients are *meant* to
+   schedule playback at that timestamp corrected by their clock offset — but see the next note.
+
+> **Current client state (WIP):** in `Manager._handleMessages` all three `/sampler/play*`
+> addresses currently call `granularSynth.setAndPlay(audioBuffers)`; the `Sampler.setAndPlay`
+> call (the path that actually applies `timestamp` + clock offset) is commented out. So today
+> the client ignores the timestamp, the offset, and the broadcast/next/rand distinction, and
+> just grain-plays `audioBuffers[0]`. The server-side routing above is still live; the
+> Sampler/clock-sync design below documents the intended path, not the current one.
 
 ### OSC over WebSocket
 
@@ -72,12 +80,13 @@ images and serves the built frontend via nginx.
 cd frontend
 npm install
 npm run dev      # vite --host (needed so phones on the LAN can reach it)
-npm run build    # tsc && vite build  — also the type-check step
+npm run build    # tsc -p tsconfig.json && tsc -p tsconfig.worklet.json && vite build (also the type-check)
 ```
 
-There are no tests and no separate lint script wired into `frontend/package.json`. The **root**
-`package.json` carries prettier + eslint 10 + typescript-eslint (`eslint.config.mjs`); run
-`npx eslint .` / `npx prettier` from the repo root.
+There are no tests and no separate lint script wired into `frontend/package.json`. The root
+`package.json` carries the prettier + eslint 10 + typescript-eslint *dependencies*, but the
+flat config lives at `frontend/eslint.config.mjs` (there is no config at the repo root), so run
+`npx eslint .` from `frontend/`. `npm run build` (the two `tsc` passes) is the type-check step.
 
 ### Server / watcher directly
 
