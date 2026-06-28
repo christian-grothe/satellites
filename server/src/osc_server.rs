@@ -69,7 +69,7 @@ impl OscServer {
 
     pub fn add_timestamp(&self, msg: &mut rosc::OscMessage) -> OscPacket {
         let now = SystemTime::now();
-        let timestamp = now.duration_since(UNIX_EPOCH).unwrap().as_millis() + 1000;
+        let timestamp = now.duration_since(UNIX_EPOCH).unwrap().as_millis();
 
         msg.args
             .push(rosc::OscType::String("timestamp".to_string()));

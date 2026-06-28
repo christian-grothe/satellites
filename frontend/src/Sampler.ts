@@ -56,14 +56,15 @@ class Sampler {
   }
 
   setAndPlay(argsArray: any[], offset: number, buffers: AudioBuffer[]) {
-    let args: { [key: string]: any } = {};
+    const args: { [key: string]: any } = {};
     for (let i = 0; i < argsArray.length; i += 2) {
       const key = argsArray[i];
       const value = argsArray[i + 1];
       args[key] = value;
     }
+
     const currentTime = Date.now() + offset;
-    const delay = args.timestamp - currentTime;
+    const delay = args.timestamp - currentTime + args.beat * 1000;
 
     this.play(buffers, delay, args as PlayMessage);
   }
@@ -99,7 +100,7 @@ class Sampler {
     source.playbackRate.value = pitch;
     source.loop = true;
     source.loopStart = this.sampleLength * start;
-    source.loopEnd = this.sampleLength * start + length;
+    source.loopEnd = this.sampleLength * (start + length);
 
     source.start(currentTime, source.loopStart);
     source.stop(currentTime + totalLength);

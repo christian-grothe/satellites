@@ -38,7 +38,8 @@ export function parseOSCMessage(arrayBuffer: ArrayBuffer) {
         args.push(dataView.getFloat32(offset));
         offset += 4;
         break;
-      case "s": // String
+      case "s": {
+        // String
         let str = "";
         while (true) {
           const char = dataView.getUint8(offset);
@@ -49,7 +50,9 @@ export function parseOSCMessage(arrayBuffer: ArrayBuffer) {
         offset = (offset + 4) & ~3; // align to 4-byte boundary
         args.push(str);
         break;
-      case "b": // Blob (binary data)
+      }
+      case "b": {
+        // Blob (binary data)
         const size = dataView.getInt32(offset);
         offset += 4;
         const blob = arrayBuffer.slice(offset, offset + size);
@@ -57,13 +60,15 @@ export function parseOSCMessage(arrayBuffer: ArrayBuffer) {
         offset += size;
         offset = (offset + 4) & ~3; // align to 4-byte boundary
         break;
-      case "h": // int64 (Unix timestamp)
+      }
+      case "h": { // int64 (Unix timestamp)
         const high = dataView.getInt32(offset);
         const low = dataView.getInt32(offset + 4);
         const int64 = high * 2 ** 32 + low;
         args.push(int64);
         offset += 8;
         break;
+      }
       default:
         throw new Error("Unsupported OSC type tag: " + typeTags[i]);
     }

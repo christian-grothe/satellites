@@ -1,11 +1,11 @@
 import Sampler from "./Sampler";
-//import GranularSynth from "./GranularSynth";
+import GranularSynth from "./GranularSynth";
 import { Synth } from "./Synth";
 import { parseOSCMessage } from "./oscParser";
 import { Stars } from "./Stars";
 
 export class Manager {
-  //granularSynth: GranularSynth;
+  granularSynth: GranularSynth;
   sampler: Sampler;
   synth: Synth;
   stars: Stars;
@@ -24,13 +24,15 @@ export class Manager {
   constructor() {
     this.sampler = new Sampler();
     this.synth = new Synth();
-    //this.granularSynth = new GranularSynth();
+    this.granularSynth = new GranularSynth();
     this.offsets = [];
     this.offsetAvergae = 0;
     this._recordingList = [];
     this.audioBuffers = [];
     this.stars = new Stars(100);
-    this.apiUrl = import.meta.env.DEV ? "localhost:8080" : "satellites.kryshe.com";
+    this.apiUrl = import.meta.env.DEV
+      ? "localhost:8080"
+      : "satellites.kryshe.com";
     this.webSocketProtocol = import.meta.env.DEV ? "ws" : "wss";
     this.httpProtocol = import.meta.env.DEV ? "http" : "https";
   }
@@ -47,7 +49,7 @@ export class Manager {
 
     this.sampler.init(this.ctx, this.mstrVol);
     this.synth.init(this.ctx, this.mstrVol);
-    //this.granularSynth.init(ctx);
+    this.granularSynth.init(ctx);
 
     this.stars.setAnalyser(this.analyserNode);
 
@@ -74,31 +76,33 @@ export class Manager {
       case "/sampler/play":
       case "/sampler/play/rand":
       case "/sampler/play/next":
-        this.sampler.setAndPlay(args, this.offsetAvergae, this.audioBuffers);
+        //this.sampler.setAndPlay(args, this.offsetAvergae, this.audioBuffers);
+        this.granularSynth.setAndPlay(this.audioBuffers);
         break;
       case "/synth/play":
         this.synth.play();
         break;
       case "/recordings":
-        console.log(args);
         this.recordingList = args as string[];
         break;
       case "/test":
         console.log(args);
         break;
-      case "/sync":
+      case "/sync": {
         const t3 = Date.now();
         const t1 = args[1] as number;
         const t2 = args[3] as number;
         this._handleOffset(t1, t2, t3);
         break;
+      }
       default:
-        console.log("unknown OSC address", address);
+        console.error("unknown OSC address", address);
         break;
     }
   }
 
   set recordingList(filenames: string[]) {
+    console.log(filenames);
     this._recordingList = filenames;
     setTimeout(() => {
       this.getRecordings();
@@ -111,9 +115,7 @@ export class Manager {
     try {
       for (const filename of this._recordingList) {
         if (filename === "test.wav") continue;
-        const response = await fetch(
-          `http://localhost:8083/${filename}`,
-        );
+        const response = await fetch(`http://localhost:8083/${filename}`);
         const arrayBuffer = await response.arrayBuffer();
         const newBuffer = await this.ctx.decodeAudioData(arrayBuffer);
         this.audioBuffers.push(newBuffer);
