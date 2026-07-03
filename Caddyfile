@@ -1,0 +1,25 @@
+# Reference snippet — append these blocks to your global (host) Caddyfile.
+# Caddy runs on the host and reverse-proxies to the container ports that
+# docker-compose publishes on 127.0.0.1 (see docker-compose.yml).
+#
+# The frontend bundle is built to talk to:
+#   wss://satellites.christian-grothe.com:8080/ws        -> server
+#   https://satellites.christian-grothe.com:8083/<file>  -> static recordings
+# so Caddy must own those public ports; the containers publish on shifted
+# localhost ports (18080 / 18083) to avoid colliding with Caddy.
+# OSC still arrives directly on UDP :8081 (not proxied by Caddy).
+
+# The app itself (frontend SPA)
+satellites.christian-grothe.com {
+	reverse_proxy localhost:5173
+}
+
+# WebSocket + clock sync (Rust server). reverse_proxy handles the WS upgrade.
+satellites.christian-grothe.com:8080 {
+	reverse_proxy localhost:18080
+}
+
+# Static recordings (nginx autoindex)
+satellites.christian-grothe.com:8083 {
+	reverse_proxy localhost:18083
+}

@@ -1,6 +1,21 @@
-import { Grain, Trigger } from "./Grain";
+import { Env, Grain, Trigger } from "./Grain";
 
 const NUM_GRAIN = 16;
+
+type InitMessageEvent = {
+  type: "init";
+  buffer: Float32Array;
+  loopstart: number;
+  looplength: number;
+  incAtt: number;
+  incRel: number;
+  pitch: number;
+  spray: number;
+  length: number;
+  dens: number;
+  delay: number;
+  mode: number;
+};
 
 // @types/audioworklet does not ship AudioParamDescriptor, so declare it locally.
 interface AudioParamDescriptor {
@@ -9,49 +24,6 @@ interface AudioParamDescriptor {
   minValue?: number;
   maxValue?: number;
   automationRate?: "a-rate" | "k-rate";
-}
-
-class Env {
-  val = 0.0;
-  incAtt = 0.0;
-  incRel = 0.5;
-  state: "att" | "rel" | "hold" | "off" = "hold";
-  loop = false;
-
-  constructor(incAtt: number, incRel: number, loop: boolean) {
-    this.val = 0;
-    this.incAtt = 1 / (48000 * incAtt);
-    this.incRel = 1 / (48000 * incRel);
-    this.state = "att";
-    this.loop = loop;
-  }
-
-  tick() {
-    switch (this.state) {
-      case "att": {
-        this.val += this.incAtt;
-        if (this.val >= 1.0) {
-          if (this.loop) {
-            this.state = "hold";
-          } else {
-            this.state = "rel";
-          }
-        }
-        break;
-      }
-      case "rel": {
-        this.val -= this.incRel;
-        if (this.val <= 0.0 && !this.loop) {
-          this.state = "off";
-        } else if (this.val <= 0.0 && this.loop) {
-          this.state = "att";
-        }
-        break;
-      }
-      case "hold":
-        break;
-    }
-  }
 }
 
 class GranularSynth extends AudioWorkletProcessor {
@@ -68,6 +40,8 @@ class GranularSynth extends AudioWorkletProcessor {
   private grains!: Grain[];
   private trigger!: Trigger;
   private mode: "tape" | "grain" = "tape";
+  private waitSamples = 0;
+  private waitCount = 0;
 
   constructor() {
     super();
@@ -86,6 +60,9 @@ class GranularSynth extends AudioWorkletProcessor {
     // left channel
     const samples = output[0];
     for (let i = 0; i < samples.length; i++) {
+      this.waitCount++;
+      if (this.waitCount <= this.waitSamples) continue;
+
       if (this.mode === "grain") {
         // 1. activate new grain
         if (this.trigger.tick()) {
@@ -165,7 +142,7 @@ class GranularSynth extends AudioWorkletProcessor {
     return [{ name: "gain", defaultValue: 0, minValue: 0, maxValue: 1 }];
   }
 
-  private messageHandler(event: MessageEvent) {
+  private messageHandler(event: MessageEvent<InitMessageEvent>) {
     this.buffer = event.data.buffer;
     this.playhead = this.loopstart * event.data.buffer.length;
 
@@ -177,7 +154,8 @@ class GranularSynth extends AudioWorkletProcessor {
 
     this.mstrEnv.incAtt = 1 / (48000 * (event.data.incAtt || 0.01));
     this.mstrEnv.incRel = 1 / (48000 * (event.data.incRel || 1));
-    this.mode = "grain";
+    this.mode = event.data.mode === 0 ? "grain" : "tape";
+    this.waitSamples = (event.data.delay * 48000) / 1000;
 
     this.pitch = event.data.pitch || 1.0;
     this.grainLength = event.data.length || 0.25;

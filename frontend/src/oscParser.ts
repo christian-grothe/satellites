@@ -51,16 +51,16 @@ export function parseOSCMessage(arrayBuffer: ArrayBuffer) {
         args.push(str);
         break;
       }
-      case "b": {
-        // Blob (binary data)
-        const size = dataView.getInt32(offset);
-        offset += 4;
-        const blob = arrayBuffer.slice(offset, offset + size);
-        args.push(blob);
-        offset += size;
-        offset = (offset + 4) & ~3; // align to 4-byte boundary
-        break;
-      }
+      // case "b": {
+      //   // Blob (binary data)
+      //   const size = dataView.getInt32(offset);
+      //   offset += 4;
+      //   const blob = arrayBuffer.slice(offset, offset + size);
+      //   args.push(blob);
+      //   offset += size;
+      //   offset = (offset + 4) & ~3; // align to 4-byte boundary
+      //   break;
+      // }
       case "h": { // int64 (Unix timestamp)
         const high = dataView.getInt32(offset);
         const low = dataView.getInt32(offset + 4);

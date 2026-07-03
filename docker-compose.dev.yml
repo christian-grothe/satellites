@@ -16,6 +16,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: satellites_frontend
+    environment:
+      #VITE_SERVER_URL: localhost:8080
+      VITE_SOCKET_PORT: 8080
+      VITE_STATIC_PORT: 8083
+      VITE_SERVER_URL: 192.168.1.183
+      VITE_WEBSOCKET_PROTOCOL: ws
+      VITE_HTTP_PROTOCOL: http 
     volumes:
       - ./frontend:/app
     ports:

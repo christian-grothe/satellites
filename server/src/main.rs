@@ -22,19 +22,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("tcp socket listening on {:?}", socket_tcp.local_addr());
     println!("udp socket listening on {:?}", socket_udp.local_addr());
 
-    let mut watcher = notify::recommended_watcher({
-        move |res| match res {
-            Ok(event) => handle_watch_event(event, clients_watcher.clone()),
-            Err(e) => println!("watch error: {:?}", e),
-        }
-    })?;
-
     let osc_server = OscServer {
         socket: socket_udp,
         buf: vec![0; 1024],
         msg: None,
         clients: clients.clone(),
     };
+
+    let mut watcher = notify::recommended_watcher({
+        move |res| match res {
+            Ok(event) => handle_watch_event(event, clients_watcher.clone()),
+            Err(e) => println!("watch error: {:?}", e),
+        }
+    })?;
 
     let watch_handler = tokio::spawn(async move {
         if let Err(e) = watcher.watch(Path::new("./recordings"), RecursiveMode::Recursive) {

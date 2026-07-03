@@ -54,6 +54,49 @@ export class GrainEnvelope {
   }
 }
 
+export class Env {
+  val = 0.0;
+  incAtt = 0.0;
+  incRel = 0.5;
+  state: "att" | "rel" | "hold" | "off" = "hold";
+  loop = false;
+
+  constructor(incAtt: number, incRel: number, loop: boolean) {
+    this.val = 0;
+    this.incAtt = 1 / (48000 * incAtt);
+    this.incRel = 1 / (48000 * incRel);
+    this.state = "att";
+    this.loop = loop;
+  }
+
+  tick() {
+    switch (this.state) {
+      case "att": {
+        this.val += this.incAtt;
+        if (this.val >= 1.0) {
+          if (this.loop) {
+            this.state = "hold";
+          } else {
+            this.state = "rel";
+          }
+        }
+        break;
+      }
+      case "rel": {
+        this.val -= this.incRel;
+        if (this.val <= 0.0 && !this.loop) {
+          this.state = "off";
+        } else if (this.val <= 0.0 && this.loop) {
+          this.state = "att";
+        }
+        break;
+      }
+      case "hold":
+        break;
+    }
+  }
+}
+
 export class Grain {
   env: GrainEnvelope;
   active: boolean;

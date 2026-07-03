@@ -1,13 +1,9 @@
-import Sampler from "./Sampler";
 import GranularSynth from "./GranularSynth";
-import { Synth } from "./Synth";
 import { parseOSCMessage } from "./oscParser";
 import { Stars } from "./Stars";
 
 export class Manager {
   granularSynth: GranularSynth;
-  sampler: Sampler;
-  synth: Synth;
   stars: Stars;
   ws: WebSocket | undefined;
   ctx: AudioContext | undefined;
@@ -22,22 +18,18 @@ export class Manager {
   httpProtocol: string;
 
   constructor() {
-    this.sampler = new Sampler();
-    this.synth = new Synth();
     this.granularSynth = new GranularSynth();
     this.offsets = [];
     this.offsetAvergae = 0;
     this._recordingList = [];
     this.audioBuffers = [];
     this.stars = new Stars(100);
-    this.apiUrl = import.meta.env.DEV
-      ? "localhost:8080"
-      : "satellites.kryshe.com";
-    this.webSocketProtocol = import.meta.env.DEV ? "ws" : "wss";
-    this.httpProtocol = import.meta.env.DEV ? "http" : "https";
+    this.apiUrl = import.meta.env.VITE_SERVER_URL;
+    this.webSocketProtocol = import.meta.env.VITE_WEBSOCKET_PROTOCOL;
+    this.httpProtocol = import.meta.env.VITE_HTTP_PROTOCOL;
   }
 
-  init(ctx: AudioContext) {
+  async init(ctx: AudioContext) {
     this.ctx = ctx;
 
     this.mstrVol = ctx.createGain();
@@ -47,13 +39,13 @@ export class Manager {
     this.analyserNode.connect(ctx.destination);
     this.analyserNode.fftSize = 256;
 
-    this.sampler.init(this.ctx, this.mstrVol);
-    this.synth.init(this.ctx, this.mstrVol);
-    this.granularSynth.init(ctx);
+    await this.granularSynth.init(ctx);
 
     this.stars.setAnalyser(this.analyserNode);
 
-    const ws = new WebSocket(`${this.webSocketProtocol}://${this.apiUrl}/ws`);
+    const ws = new WebSocket(
+      `${import.meta.env.VITE_WEBSOCKET_PROTOCOL}://${import.meta.env.VITE_SERVER_URL}:${import.meta.env.VITE_SOCKET_PORT}/ws`,
+    );
 
     ws.onopen = () => {
       this._requestSync();
@@ -76,11 +68,11 @@ export class Manager {
       case "/sampler/play":
       case "/sampler/play/rand":
       case "/sampler/play/next":
-        //this.sampler.setAndPlay(args, this.offsetAvergae, this.audioBuffers);
-        this.granularSynth.setAndPlay(this.audioBuffers, args);
-        break;
-      case "/synth/play":
-        this.synth.play();
+        this.granularSynth.setAndPlay(
+          this.audioBuffers,
+          args,
+          this.offsetAvergae,
+        );
         break;
       case "/recordings":
         this.recordingList = args as string[];
@@ -115,7 +107,9 @@ export class Manager {
     try {
       for (const filename of this._recordingList) {
         if (filename === "test.wav") continue;
-        const response = await fetch(`http://localhost:8083/${filename}`);
+        const response = await fetch(
+          `${import.meta.env.VITE_HTTP_PROTOCOL}://${import.meta.env.VITE_SERVER_URL}:${import.meta.env.VITE_STATIC_PORT}/${filename}`,
+        );
         const arrayBuffer = await response.arrayBuffer();
         const newBuffer = await this.ctx.decodeAudioData(arrayBuffer);
         this.audioBuffers.push(newBuffer);
