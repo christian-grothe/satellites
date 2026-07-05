@@ -1,15 +1,10 @@
 use futures::channel::mpsc::UnboundedSender;
 use rosc::{OscMessage, OscPacket, OscType};
-use std::{
-    collections::HashMap,
-    fs,
-    net::SocketAddr,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, fs, net::SocketAddr};
 use tokio_tungstenite::tungstenite::Message;
 
 pub type Tx = UnboundedSender<Message>;
-pub type ClientMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
+pub type ClientMap = HashMap<SocketAddr, Tx>;
 
 #[derive(Default)]
 pub struct Clients {
@@ -26,15 +21,14 @@ pub enum SendTo {
 
 impl Clients {
     pub fn add_client(&mut self, addr: SocketAddr, tx: Tx) {
-        self.client_map.lock().unwrap().insert(addr, tx.clone());
+        self.client_map.insert(addr, tx.clone());
         self.client_array.push(addr);
         self.last_pong.insert(addr, std::time::Instant::now());
     }
 
     pub fn remove_client(&mut self, addr: SocketAddr) {
-        if self.client_map.lock().unwrap().remove(&addr).is_some() {
+        if self.client_map.remove(&addr).is_some() {
             self.client_array.retain(|&x| x != addr);
-            self.current_client_index = 0;
             self.last_pong.remove(&addr);
         }
     }
@@ -46,8 +40,7 @@ impl Clients {
     }
 
     pub fn send_to_client(&self, addr: SocketAddr, msg: Message) {
-        let binding = self.client_map.lock().unwrap();
-        if let Some(tx) = binding.get(&addr) {
+        if let Some(tx) = self.client_map.get(&addr) {
             Clients::handle_message_error(tx.unbounded_send(msg));
         }
     }
@@ -89,8 +82,7 @@ impl Clients {
     }
 
     pub fn broadcast(&self, msg: Message) {
-        let binding = self.client_map.lock().unwrap();
-        for (_, tx) in binding.iter() {
+        for (_, tx) in self.client_map.iter() {
             if let Err(e) = tx.unbounded_send(msg.clone()) {
                 println!("Error sending message to client: {:?}", e);
             }
@@ -103,8 +95,7 @@ impl Clients {
         }
         let client = self.client_array[self.current_client_index];
         self.current_client_index = (self.current_client_index + 1) % self.client_array.len();
-        let binding = self.client_map.lock().unwrap();
-        let tx = binding.get(&client);
+        let tx = self.client_map.get(&client);
         tx.cloned()
     }
 
@@ -114,8 +105,7 @@ impl Clients {
         }
         let i: usize = rand::random::<usize>() % self.client_array.len();
         let client = self.client_array[i];
-        let binding = self.client_map.lock().unwrap();
-        let tx = binding.get(&client);
+        let tx = self.client_map.get(&client);
         tx.cloned()
     }
 
