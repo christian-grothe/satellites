@@ -13,7 +13,7 @@ type InitMessageEvent = {
   spray: number;
   length: number;
   dens: number;
-  delay: number;
+  startTime: number;
   mode: number;
 };
 
@@ -30,8 +30,8 @@ class GranularSynth extends AudioWorkletProcessor {
   private isActive = true;
   private buffer: Float32Array | null = null;
   private playhead = 0;
-  private env = new Env(0.005, 0.005, true);
-  private mstrEnv = new Env(0.0, 0.5, false);
+  private env = new Env(0.005, 0.005, true, sampleRate);
+  private mstrEnv = new Env(0.0, 0.5, false, sampleRate);
   private pitch = 1;
   private spray = 0.0;
   private loopstart = 0;
@@ -40,13 +40,13 @@ class GranularSynth extends AudioWorkletProcessor {
   private grains!: Grain[];
   private trigger!: Trigger;
   private mode: "tape" | "grain" = "tape";
-  private waitSamples = 0;
-  private waitCount = 0;
+  // Absolute audio-clock frame at which playback should begin (0 = immediately).
+  private startFrame = 0;
 
   constructor() {
     super();
     this.port.onmessage = this.messageHandler.bind(this);
-    this.trigger = new Trigger();
+    this.trigger = new Trigger(sampleRate);
   }
 
   process(
@@ -60,8 +60,8 @@ class GranularSynth extends AudioWorkletProcessor {
     // left channel
     const samples = output[0];
     for (let i = 0; i < samples.length; i++) {
-      this.waitCount++;
-      if (this.waitCount <= this.waitSamples) continue;
+      // Wait until the scheduled start frame, sample-accurately.
+      if (currentFrame + i < this.startFrame) continue;
 
       if (this.mode === "grain") {
         // 1. activate new grain
@@ -71,7 +71,7 @@ class GranularSynth extends AudioWorkletProcessor {
               grain.activate(
                 this.playhead,
                 this.pitch,
-                48000 * this.grainLength,
+                sampleRate * this.grainLength,
               );
               break;
             }
@@ -152,10 +152,11 @@ class GranularSynth extends AudioWorkletProcessor {
 
     this.spray = event.data.spray || 0.0;
 
-    this.mstrEnv.incAtt = 1 / (48000 * (event.data.incAtt || 0.01));
-    this.mstrEnv.incRel = 1 / (48000 * (event.data.incRel || 1));
+    this.mstrEnv.incAtt = 1 / (sampleRate * (event.data.incAtt || 0.01));
+    this.mstrEnv.incRel = 1 / (sampleRate * (event.data.incRel || 1));
     this.mode = event.data.mode === 0 ? "grain" : "tape";
-    this.waitSamples = (event.data.delay * 48000) / 1000;
+    // Absolute frame to start at; clamp past-due events to "now" (0).
+    this.startFrame = Math.max(0, Math.round(event.data.startTime * sampleRate));
 
     this.pitch = event.data.pitch || 1.0;
     this.grainLength = event.data.length || 0.25;

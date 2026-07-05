@@ -1,14 +1,16 @@
 export class Trigger {
   phase: number;
   increment: number;
+  sampleRate: number;
 
-  constructor() {
+  constructor(sampleRate: number) {
     this.phase = 0;
-    this.increment = 10 / 48000;
+    this.sampleRate = sampleRate;
+    this.increment = 10 / sampleRate;
   }
 
   setInc(inc: number) {
-    this.increment = inc / 48000;
+    this.increment = inc / this.sampleRate;
   }
 
   tick(): boolean {
@@ -61,10 +63,10 @@ export class Env {
   state: "att" | "rel" | "hold" | "off" = "hold";
   loop = false;
 
-  constructor(incAtt: number, incRel: number, loop: boolean) {
+  constructor(incAtt: number, incRel: number, loop: boolean, sampleRate: number) {
     this.val = 0;
-    this.incAtt = 1 / (48000 * incAtt);
-    this.incRel = 1 / (48000 * incRel);
+    this.incAtt = 1 / (sampleRate * incAtt);
+    this.incRel = 1 / (sampleRate * incRel);
     this.state = "att";
     this.loop = loop;
   }

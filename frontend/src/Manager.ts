@@ -49,9 +49,11 @@ export class Manager {
 
     ws.onopen = () => {
       this._requestSync();
-      // setInterval(() => {
-      //   this._requestSync();
-      // }, 100000);
+      // Periodically resync so slow clock drift is corrected during a
+      // performance (the rolling average keeps the last 20 offsets).
+      setInterval(() => {
+        this._requestSync();
+      }, 5000);
     };
 
     ws.onmessage = this._handleMessages.bind(this);
@@ -81,7 +83,7 @@ export class Manager {
         console.log(args);
         break;
       case "/sync": {
-        const t3 = Date.now();
+        const t3 = performance.timeOrigin + performance.now();
         const t1 = args[1] as number;
         const t2 = args[3] as number;
         this._handleOffset(t1, t2, t3);
@@ -122,7 +124,9 @@ export class Manager {
   _handleOffset(t1: number, t2: number, t3: number) {
     const rtt = t3 - t1;
     const owd = rtt / 2;
-    const offset = t2 - t1 + owd;
+    // NTP offset (how far the server clock is ahead of ours):
+    //   offset = t2 - (t1 + t3) / 2 = t2 - t1 - owd
+    const offset = t2 - t1 - owd;
     this.offsets.push(offset);
     if (this.offsets.length > 20) {
       this.offsets.shift();
@@ -133,7 +137,7 @@ export class Manager {
 
   _requestSync() {
     if (!this.ws) return;
-    const now = Date.now();
+    const now = performance.timeOrigin + performance.now();
     const msg = { message_type: "sync", data: `${now}` };
     this.ws.send(JSON.stringify(msg));
   }

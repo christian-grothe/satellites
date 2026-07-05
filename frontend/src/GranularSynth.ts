@@ -53,8 +53,13 @@ export default class GranularSynth {
       mode
     } = args;
 
-    const currentTime = Date.now() + offset;
-    const delay = timestamp - currentTime + beat * 1000;
+    // Convert the server-clock event time into an absolute time on THIS
+    // device's audio clock. The worklet then waits for that instant using its
+    // own sample counter, so the postMessage/render-quantum latency between
+    // here and the audio thread no longer smears the start time.
+    const serverNow = performance.timeOrigin + performance.now() + offset;
+    const delayMs = timestamp + beat * 1000 - serverNow;
+    const startTime = this.ctx.currentTime + delayMs / 1000;
 
     const granularSynth = new AudioWorkletNode(this.ctx, "granular-synth");
     granularSynth.connect(this.ctx.destination);
@@ -69,7 +74,7 @@ export default class GranularSynth {
       spray,
       length,
       dens,
-      delay,
+      startTime,
       mode,
     });
   }
