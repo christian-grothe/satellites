@@ -12,6 +12,7 @@ export class Manager {
   offsets: Array<number>;
   offsetAvergae: number;
   _recordingList: string[];
+  _loadSeq = 0;
   audioBuffers: AudioBuffer[];
   apiUrl: string;
   webSocketProtocol: string;
@@ -105,17 +106,19 @@ export class Manager {
 
   async getRecordings() {
     if (!this.ctx) return;
-    this.audioBuffers = [];
+    // Only keep the latest recording (list is sorted oldest -> newest).
+    const candidates = this._recordingList.filter((f) => f !== "test.wav");
+    const filename = candidates[candidates.length - 1];
+    if (!filename) return;
+    const seq = ++this._loadSeq;
     try {
-      for (const filename of this._recordingList) {
-        if (filename === "test.wav") continue;
-        const response = await fetch(
-          `${import.meta.env.VITE_HTTP_PROTOCOL}://${import.meta.env.VITE_SERVER_URL}:${import.meta.env.VITE_STATIC_PORT}/${filename}`,
-        );
-        const arrayBuffer = await response.arrayBuffer();
-        const newBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-        this.audioBuffers.push(newBuffer);
-      }
+      const response = await fetch(
+        `${import.meta.env.VITE_HTTP_PROTOCOL}://${import.meta.env.VITE_SERVER_URL}:${import.meta.env.VITE_STATIC_PORT}/${filename}`,
+      );
+      const arrayBuffer = await response.arrayBuffer();
+      const newBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+      if (seq !== this._loadSeq) return; // a newer load superseded this one
+      this.audioBuffers = [newBuffer];
     } catch (e) {
       console.log(e);
     }

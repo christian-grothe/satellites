@@ -95,7 +95,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 fn handle_watch_event(event: Event, clients: Arc<Mutex<Clients>>) {
     match event.kind {
-        notify::EventKind::Create(_) => {
+        // Also fire when a writer finishes: scp creates the file first and fills it
+        // afterwards, so clients fetching on Create alone can get a partial file.
+        notify::EventKind::Create(_)
+        | notify::EventKind::Access(notify::event::AccessKind::Close(
+            notify::event::AccessMode::Write,
+        )) => {
             let clients = clients.lock().unwrap();
             clients.send_recording_list(clients::SendTo::Broadcast);
         }

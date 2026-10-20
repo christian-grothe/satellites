@@ -52,15 +52,20 @@ impl Clients {
     }
 
     pub fn send_recording_list(&self, send_to: SendTo) {
-        let files: Vec<OscType> = fs::read_dir("./recordings")
+        // Sorted oldest -> newest by modification time, so the last entry is the latest.
+        let mut entries: Vec<(std::time::SystemTime, String)> = fs::read_dir("./recordings")
             .unwrap()
             .filter_map(|entry| {
-                entry.ok().and_then(|e| {
-                    e.file_name()
-                        .to_str()
-                        .map(|s| OscType::String(s.to_string()))
-                })
+                let e = entry.ok()?;
+                let name = e.file_name().to_str()?.to_string();
+                let modified = e.metadata().ok()?.modified().ok()?;
+                Some((modified, name))
             })
+            .collect();
+        entries.sort();
+        let files: Vec<OscType> = entries
+            .into_iter()
+            .map(|(_, name)| OscType::String(name))
             .collect();
 
         let osc_msg = OscMessage {
