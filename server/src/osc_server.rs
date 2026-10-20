@@ -21,8 +21,7 @@ pub struct OscServer {
 impl OscServer {
     pub async fn run(mut self) -> Result<(), io::Error> {
         loop {
-            if let Some((size, from)) = self.msg {
-                println!("[osc server] udp packet from {} ({} bytes)", from, size);
+            if let Some((size, _)) = self.msg {
                 let (_, packet) = rosc::decoder::decode_udp(&self.buf[..size]).unwrap();
 
                 match packet {
@@ -42,7 +41,6 @@ impl OscServer {
     }
 
     pub fn handle_message(&self, msg: &rosc::OscMessage, packet: &OscPacket) {
-        println!("[osc server] received {} {:?}", msg.addr, msg.args);
         match msg.addr.as_str() {
             "/sampler/play/next" => {
                 let raw = rosc::encoder::encode(packet).unwrap();
