@@ -65,6 +65,7 @@ export class Manager {
     const arrayBuf = await event.data.arrayBuffer();
 
     const { address, args } = parseOSCMessage(arrayBuf);
+    console.log("[osc client] received", address, args);
 
     switch (address) {
       case "/sampler/play":

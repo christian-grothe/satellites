@@ -48,10 +48,12 @@ export default class GranularSynth {
       pitch,
       length,
       dens,
-      timestamp,
-      beat,
       mode
     } = args;
+
+    // timestamp arrives as an OSC string, beat as a number: coerce both
+    const timestamp = Number(args.timestamp);
+    const beat = Number(args.beat);
 
     // Convert the server-clock event time into an absolute time on THIS
     // device's audio clock. The worklet then waits for that instant using its
